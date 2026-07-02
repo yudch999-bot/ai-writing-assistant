@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Bot, Plus, Sparkles, Play, Trash2, Loader2, PenLine, X, Copy, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bot, Plus, Sparkles, Play, Trash2, Loader2, PenLine, X, Copy } from 'lucide-react';
 import { useSettings, callAI } from '../../lib/ai';
 import { useToast } from '../../components/Toast';
-import Link from 'next/link';
 
 interface Agent {
   id: number;
@@ -14,22 +13,61 @@ interface Agent {
   used: number;
 }
 
+const STORAGE_KEY = 'mobi-agent-agents';
+
+const defaultAgents: Agent[] = [
+  { id: 1, name: '情感文案助手', role: '你是一位温暖细腻的情感领域作者，擅长用故事打动人心，文字有温度、有画面感。', style: '情感治愈风 - 夜听', used: 28 },
+  { id: 2, name: '职场干货写手', role: '你是一位资深职场导师，擅长用数据和案例说话，逻辑清晰，干货满满。', style: '职场干货风 - 插座学院', used: 15 },
+];
+
+function loadAgents(): Agent[] {
+  if (typeof window === 'undefined') return defaultAgents;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved) as Agent[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return defaultAgents;
+}
+
+function saveAgents(agents: Agent[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
+  } catch {}
+}
+
 const wordCountOptions = [500, 800, 1200, 1500, 2000, 2500];
 
 export default function AgentsPage() {
   const { settings } = useSettings();
   const toast = useToast();
-  const [agents, setAgents] = useState<Agent[]>([
-    { id: 1, name: '情感文案助手', role: '你是一位温暖细腻的情感领域作者，擅长用故事打动人心，文字有温度、有画面感。', style: '情感治愈风 - 夜听', used: 28 },
-    { id: 2, name: '职场干货写手', role: '你是一位资深职场导师，擅长用数据和案例说话，逻辑清晰，干货满满。', style: '职场干货风 - 插座学院', used: 15 },
-  ]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [nextId, setNextId] = useState(0);
+  const [initialized, setInitialized] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const loaded = loadAgents();
+    setAgents(loaded);
+    setNextId(loaded.reduce((max, a) => Math.max(max, a.id), 0) + 1);
+    setInitialized(true);
+  }, []);
+
+  // Persist to localStorage on every change after initialization
+  useEffect(() => {
+    if (initialized) {
+      saveAgents(agents);
+    }
+  }, [agents, initialized]);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newRole, setNewRole] = useState('');
   const [newStyle, setNewStyle] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [nextId, setNextId] = useState(3);
 
   // Writing modal state
   const [writingAgent, setWritingAgent] = useState<Agent | null>(null);

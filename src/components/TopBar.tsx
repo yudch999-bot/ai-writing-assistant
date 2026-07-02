@@ -12,6 +12,34 @@ interface Notification {
   path: string;
 }
 
+const NOTIF_STORAGE_KEY = 'mobi-notifications';
+
+const defaultNotifications: Notification[] = [
+  { id: 1, title: '文章生成完成：2026年必备AI技能', time: '2 分钟前', read: true, path: '/article-generation' },
+  { id: 2, title: '内容检测完成：AI 痕迹评分 35%', time: '15 分钟前', read: true, path: '/content-detection' },
+  { id: 3, title: '热点数据已更新：共采集 20 条', time: '1 小时前', read: true, path: '/hot-topics' },
+  { id: 4, title: '风格分析完成：情感治愈风', time: '3 小时前', read: true, path: '/style-clone' },
+];
+
+function loadNotifications(): Notification[] {
+  if (typeof window === 'undefined') return defaultNotifications;
+  try {
+    const saved = localStorage.getItem(NOTIF_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved) as Notification[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return defaultNotifications;
+}
+
+function saveNotifications(ns: Notification[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(ns));
+  } catch {}
+}
+
 export function TopBar() {
   const router = useRouter();
   const [showNotif, setShowNotif] = useState(false);
@@ -20,12 +48,19 @@ export function TopBar() {
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
 
-  const [notifications, setNotifications] = useState<Notification[]>([
-    { id: 1, title: '文章生成完成：2026年必备AI技能', time: '2 分钟前', read: false, path: '/article-generation' },
-    { id: 2, title: '内容检测完成：AI 痕迹评分 35%', time: '15 分钟前', read: false, path: '/content-detection' },
-    { id: 3, title: '热点数据已更新：共采集 20 条', time: '1 小时前', read: true, path: '/hot-topics' },
-    { id: 4, title: '风格分析完成：情感治愈风', time: '3 小时前', read: true, path: '/style-clone' },
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    setNotifications(loadNotifications());
+  }, []);
+
+  // Persist on change
+  useEffect(() => {
+    if (notifications.length > 0) {
+      saveNotifications(notifications);
+    }
+  }, [notifications]);
 
   const unread = notifications.filter(n => !n.read).length;
 
