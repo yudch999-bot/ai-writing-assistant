@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Menu,
   Clock,
+  CalendarDays,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/', label: '首页概览', icon: Sparkles, exact: true },
   { href: '/style-clone', label: '风格复刻', icon: PenLine },
   { href: '/hot-topics', label: '热点追踪', icon: Flame },
+  { href: '/content-plan', label: '内容规划', icon: CalendarDays },
   { href: '/title-generator', label: '标题生成', icon: FileText },
   { href: '/article-generation', label: '文章生成', icon: Layers },
   { href: '/rewriting', label: '文章仿写', icon: RotateCcw },
