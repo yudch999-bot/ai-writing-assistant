@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bot, Plus, Sparkles, Play, Trash2, Loader2, PenLine, X, Copy } from 'lucide-react';
+import { Bot, Plus, Sparkles, Play, Trash2, Loader2, PenLine, X, Copy, Layout } from 'lucide-react';
 import { useSettings, callAI } from '../../lib/ai';
 import { useToast } from '../../components/Toast';
+import { useSavedContent } from '../../lib/useSavedContent';
+import { useRouter } from 'next/navigation';
 
 interface Agent {
   id: number;
@@ -44,6 +46,8 @@ const wordCountOptions = [500, 800, 1200, 1500, 2000, 2500];
 export default function AgentsPage() {
   const { settings } = useSettings();
   const toast = useToast();
+  const router = useRouter();
+  const { save } = useSavedContent();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [nextId, setNextId] = useState(0);
   const [initialized, setInitialized] = useState(false);
@@ -150,6 +154,8 @@ export default function AgentsPage() {
         settings.model,
       );
       setWritingResult(res);
+      save('智能体', topic, res);
+      toast.show('已保存到历史记录');
       setAgents(prev => prev.map(a =>
         a.id === writingAgent.id ? { ...a, used: a.used + 1 } : a
       ));
@@ -302,10 +308,13 @@ export default function AgentsPage() {
             {writingResult && (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--color-text-secondary)]">生成完成</span>
+                  <span className="text-xs text-[var(--color-text-secondary)]">生成完成 · 已保存到历史记录</span>
                   <div className="flex gap-2">
-                    <button onClick={() => { setWritingResult(null); setTopic(''); }} className="text-xs text-[var(--color-primary-light)] hover:underline">继续写作</button>
+                    <button onClick={() => { navigator.clipboard.writeText(writingResult || ''); router.push('/formatting'); toast.show('已复制并跳转排版'); }} className="btn-primary text-xs px-2 py-1" style={{ fontSize: '11px', padding: '2px 8px', height: 'auto', minHeight: 0 }}>
+                      <Layout size={11} /> 一键排版
+                    </button>
                     <button onClick={() => { navigator.clipboard.writeText(writingResult || ''); toast.show('已复制'); }} className="text-xs text-[var(--color-primary-light)] hover:underline flex items-center gap-1"><Copy size={12} /> 复制</button>
+                    <button onClick={() => { setWritingResult(null); setTopic(''); }} className="text-xs text-[var(--color-text-secondary)] hover:underline">继续写作</button>
                   </div>
                 </div>
                 <div className="rounded-xl bg-[var(--color-surface-2)] p-5 text-sm leading-relaxed whitespace-pre-wrap max-h-[400px] overflow-y-auto">
