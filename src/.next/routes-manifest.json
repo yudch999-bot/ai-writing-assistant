@@ -1,0 +1,125 @@
+{
+  "version": 3,
+  "pages404": true,
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/agents",
+      "regex": "^/agents(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/agents(?:/)?$"
+    },
+    {
+      "page": "/article-generation",
+      "regex": "^/article\\-generation(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/article\\-generation(?:/)?$"
+    },
+    {
+      "page": "/content-detection",
+      "regex": "^/content\\-detection(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/content\\-detection(?:/)?$"
+    },
+    {
+      "page": "/formatting",
+      "regex": "^/formatting(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/formatting(?:/)?$"
+    },
+    {
+      "page": "/history",
+      "regex": "^/history(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/history(?:/)?$"
+    },
+    {
+      "page": "/hot-topics",
+      "regex": "^/hot\\-topics(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hot\\-topics(?:/)?$"
+    },
+    {
+      "page": "/knowledge-base",
+      "regex": "^/knowledge\\-base(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/knowledge\\-base(?:/)?$"
+    },
+    {
+      "page": "/multi-platform",
+      "regex": "^/multi\\-platform(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/multi\\-platform(?:/)?$"
+    },
+    {
+      "page": "/rewriting",
+      "regex": "^/rewriting(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/rewriting(?:/)?$"
+    },
+    {
+      "page": "/settings",
+      "regex": "^/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/settings(?:/)?$"
+    },
+    {
+      "page": "/style-clone",
+      "regex": "^/style\\-clone(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/style\\-clone(?:/)?$"
+    },
+    {
+      "page": "/title-generator",
+      "regex": "^/title\\-generator(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/title\\-generator(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSuffix": ".prefetch.rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments"
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
