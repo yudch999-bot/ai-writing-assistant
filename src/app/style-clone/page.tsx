@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   PenLine,
   Plus,
@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   XCircle,
   ExternalLink,
+  ChevronDown,
 } from 'lucide-react';
 import { useSettings, callAI } from '../../lib/ai';
 import { useToast } from '../../components/Toast';
@@ -115,6 +116,87 @@ export default function StyleClonePage() {
       setError(`${msg}。如需手动操作，可复制文章内容粘贴到下方文本框。`);
     }
   };
+
+  // ─── Fetch all links ───────────────────────────────────────────────
+
+  const [fetchingAll, setFetchingAll] = useState(false);
+  const [fetchProgress, setFetchProgress] = useState<
+    { total: number; done: number; success: number; failed: number } | null
+  >(null);
+
+  const fetchAllLinks = useCallback(async () => {
+    const validIndices = links
+      .map((l, i) => ({ link: l.trim(), i }))
+      .filter((item) => item.link);
+
+    if (validIndices.length === 0) {
+      toast.show('请至少输入一个链接');
+      return;
+    }
+
+    // Validate all URLs first
+    for (const item of validIndices) {
+      try {
+        new URL(item.link);
+      } catch {
+        toast.show(`第 ${item.i + 1} 个链接格式不正确`);
+        setLinkStatus((prev) => ({ ...prev, [item.i]: 'error' }));
+        return;
+      }
+    }
+
+    setFetchingAll(true);
+    setFetchProgress({ total: validIndices.length, done: 0, success: 0, failed: 0 });
+    setError('');
+    let accumulatedContent = content;
+
+    let successCount = 0;
+
+    // Reset all link statuses to loading
+    const loadingStatus: Record<number, 'idle' | 'loading' | 'success' | 'error'> = {};
+    validIndices.forEach((item) => (loadingStatus[item.i] = 'loading'));
+    setLinkStatus((prev) => ({ ...prev, ...loadingStatus }));
+
+    // Fetch links sequentially (respects rate limits / proxy)
+    for (const item of validIndices) {
+      try {
+        const res = await fetch('/api/fetch-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: item.link }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || '获取失败');
+        }
+
+        accumulatedContent = accumulatedContent
+          ? `${accumulatedContent}\n\n━━━ 来自 ${data.title || item.link} ━━━\n\n${data.content}`
+          : `━━━ ${data.title || '文章'} ━━━\n\n${data.content}`;
+
+        setContent(accumulatedContent);
+        setLinkStatus((prev) => ({ ...prev, [item.i]: 'success' }));
+        successCount++;
+        setFetchProgress((prev) =>
+          prev ? { ...prev, done: prev.done + 1, success: successCount } : prev,
+        );
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : '获取失败';
+        setLinkStatus((prev) => ({ ...prev, [item.i]: 'error' }));
+        setError(msg);
+        setFetchProgress((prev) =>
+          prev ? { ...prev, done: prev.done + 1, failed: prev.failed + 1 } : prev,
+        );
+      }
+    }
+
+    setFetchingAll(false);
+    toast.show(
+      `抓取完成：${validIndices.length} 篇中 ${successCount} 篇成功`,
+    );
+  }, [links, content, toast]);
 
   // ─── Analyze ───────────────────────────────────────────────────────
 
@@ -230,7 +312,7 @@ ${authorName.trim() ? `目标作者：${authorName}` : ''}
           <Sparkles size={16} className="mt-0.5 flex-shrink-0" />
           <span>
             <strong>推荐操作流：</strong>
-            粘贴文章链接 → 点击「抓取」自动获取内容 → 补充或编辑 → 点击「分析风格」。
+            粘贴文章链接 → 点击「一键抓取全部」自动获取所有内容 → 补充或编辑 → 点击「分析风格」。
             如自动抓取不完整，可手动复制粘贴文章全文到下方文本框。
           </span>
         </p>
@@ -286,6 +368,35 @@ ${authorName.trim() ? `目标作者：${authorName}` : ''}
               )}
             </div>
           ))}
+
+          {/* Batch fetch button */}
+          {links.some((l) => l.trim()) && (
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={fetchAllLinks}
+                disabled={fetchingAll}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary-light)] hover:bg-[var(--color-primary)]/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {fetchingAll && fetchProgress ? (
+                  <>
+                    <Loader2 size={12} className="animate-spin" />
+                    抓取中 {fetchProgress.done}/{fetchProgress.total}
+                    <span className="text-[var(--color-text-secondary)]">
+                      （✓{fetchProgress.success} ✗{fetchProgress.failed}）
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={12} />
+                    一键抓取全部
+                  </>
+                )}
+              </button>
+              <span className="text-xs text-[var(--color-text-secondary)]">
+                依次抓取所有链接的内容，合并到下方文本框
+              </span>
+            </div>
+          )}
 
           {links.length < 5 && (
             <button
