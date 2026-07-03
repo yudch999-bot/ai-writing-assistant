@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { usePersistentStorage } from './usePersistentStorage';
 
 const STORAGE_KEY = 'ai-writer-settings';
 
@@ -15,24 +15,13 @@ const defaults: Settings = {
 };
 
 export function useSettings() {
-  const [settings, setSettingsState] = useState<Settings>(defaults);
-  const [loaded, setLoaded] = useState(false);
+  const { data: settings, loaded, setData: saveSettings } = usePersistentStorage<Settings>(STORAGE_KEY, defaults);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setSettingsState({ ...defaults, ...JSON.parse(stored) });
-    } catch {}
-    setLoaded(true);
-  }, []);
+  const update = (partial: Partial<Settings>) => {
+    saveSettings({ ...settings, ...partial });
+  };
 
-  const saveSettings = useCallback((s: Partial<Settings>) => {
-    const next = { ...settings, ...s };
-    setSettingsState(next);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
-  }, [settings]);
-
-  return { settings, loaded, saveSettings };
+  return { settings, loaded, saveSettings: update };
 }
 
 export async function callAI(
@@ -71,12 +60,12 @@ export async function callAI(
       const chunk = decoder.decode(value, { stream: true });
       const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
       for (const line of lines) {
-        const data = line.slice(6).trim();
-        if (data === '[DONE]') continue;
+        const text = line.slice(6).trim();
+        if (text === '[DONE]') continue;
         try {
-          const json = JSON.parse(data);
-          const text = json.choices?.[0]?.delta?.content || '';
-          full += text;
+          const json = JSON.parse(text);
+          const delta = json.choices?.[0]?.delta?.content || '';
+          full += delta;
           onChunk(full);
         } catch {}
       }

@@ -24,6 +24,9 @@ yarn-error.log*
 # env files
 .env*.local
 
+# local data (persistent storage)
+/data/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
+import { usePersistentStorage } from './usePersistentStorage';
 
 export interface SavedItem {
   id: string;
@@ -13,12 +14,8 @@ export interface SavedItem {
 const STORAGE_KEY = 'ai-writer-saved-content';
 
 export function useSavedContent() {
-  const [items, setItems] = useState<SavedItem[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
-  });
+  const { data: items, loaded, setData: setItems } =
+    usePersistentStorage<SavedItem[]>(STORAGE_KEY, []);
 
   const save = useCallback((type: SavedItem['type'], title: string, content: string) => {
     const item: SavedItem = {
@@ -28,22 +25,18 @@ export function useSavedContent() {
       content,
       createdAt: new Date().toLocaleString('zh-CN'),
     };
-    const updated = [item, ...items];
-    setItems(updated);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch {}
+    // setData with functional updater — auto-persisted by the hook
+    setItems(prev => [item, ...prev]);
     return item;
-  }, [items]);
+  }, [setItems]);
 
   const remove = useCallback((id: string) => {
-    const updated = items.filter(i => i.id !== id);
-    setItems(updated);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch {}
-  }, [items]);
+    setItems(prev => prev.filter(i => i.id !== id));
+  }, [setItems]);
 
   const clearAll = useCallback(() => {
     setItems([]);
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
-  }, []);
+  }, [setItems]);
 
-  return { items, save, remove, clearAll };
+  return { items, loaded, save, remove, clearAll };
 }

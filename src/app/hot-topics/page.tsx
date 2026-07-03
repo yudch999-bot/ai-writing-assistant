@@ -191,6 +191,14 @@ export default function HotTopicsPage() {
     if (fetched > 0) {
       setTopicData(results);
       localStorage.setItem('hot-topics-count', String(Object.values(results).flat().length));
+      // Also persist to server
+      try {
+        await fetch('/api/storage', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'hot-topics-count', value: String(Object.values(results).flat().length) }),
+        });
+      } catch {}
       toast.show(`已刷新：${fetched} 个平台`);
     } else {
       toast.show('联网获取失败，显示已有数据');

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, Upload, FileText, Plus, Search, Link, Trash2, X, Eye, Copy, Loader2, Save } from 'lucide-react';
 import { useToast } from '../../components/Toast';
+import { usePersistentStorage } from '../../lib/usePersistentStorage';
 
 interface Doc {
   id: number;
@@ -15,25 +16,6 @@ interface Doc {
 
 const KB_STORAGE_KEY = 'mobi-knowledge-base';
 
-function loadDocs(): Doc[] {
-  if (typeof window === 'undefined') return defaultDocs;
-  try {
-    const saved = localStorage.getItem(KB_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved) as Doc[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {}
-  return defaultDocs;
-}
-
-function saveDocs(docs: Doc[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(KB_STORAGE_KEY, JSON.stringify(docs));
-  } catch {}
-}
-
 const defaultDocs: Doc[] = [
     { id: 1, title: '公众号运营SOP完整版', type: 'txt', date: '2026-06-28', chars: '12,580', content: '# 公众号运营SOP\n\n## 一、每日工作流程\n\n### 08:00-09:00 选题与热点追踪\n- 浏览微博热搜、百度热榜、微信热点\n- 筛选与账号定位相关的选题\n- 记录热点关键词和角度\n\n### 09:00-11:00 内容创作\n- 确定今日推文主题\n- 撰写初稿（约1500-2500字）\n- 配图选择与排版\n\n### 11:00-12:00 审核与发布\n- 检查敏感词和合规性\n- 手机预览确认排版效果\n- 定时发布\n\n## 二、每周工作流程\n\n### 周一：数据复盘\n- 分析上周各篇阅读量、分享率、转化率\n- 总结爆款规律\n\n### 周三：选题会\n- 确定下周选题方向\n- 分配写作任务\n\n### 周五：互动维护\n- 精选留言回复\n- 策划周末互动话题\n\n## 三、关键词指标\n- 打开率 > 5%\n- 分享率 > 3%\n- 关注转化率 > 1%' },
     { id: 2, title: '10w+爆款标题库', type: 'txt', date: '2026-06-25', chars: '8,320', content: `# 10w+爆款标题库\n\n## 数字型标题\n1. "月薪3万的人，都在用这5个方法管理时间"\n2. "2026年最值得关注的10个趋势"\n3. "坚持30天后，我的生活发生了这些变化"\n\n## 悬念型标题\n1. "看完这篇，我删掉了手机里80%的APP"\n2. "为什么越来越多的人开始逃离朋友圈？"\n3. "这个被忽视的细节，正在毁掉你的职场前途"\n\n## 痛点型标题\n1. "你那么努力，为什么还是升不了职？"\n2. "35岁被裁员后，我才明白的3个道理"\n3. "为什么你写的文章没人看？问题出在这里"\n\n## 共鸣型标题\n1. "对不起，我不想做一个好说话的人"\n2. "月薪5000和月薪50000的差距，不是钱"\n3. "写给每一个在深夜感到迷茫的你"\n\n## 干货型标题\n1. "2026年公众号运营避坑指南（建议收藏）"\n2. "一份来自10w+作者的写作模板，直接套用"\n3. "从0到1做公众号：我的完整心路历程"`},
@@ -43,7 +25,7 @@ const defaultDocs: Doc[] = [
 
 export default function KnowledgeBasePage() {
   const toast = useToast();
-  const [docs, setDocs] = useState<Doc[]>([]);
+  const { data: docs, loaded, setData: setDocs } = usePersistentStorage<Doc[]>(KB_STORAGE_KEY, defaultDocs);
   const [searchQ, setSearchQ] = useState('');
   const [url, setUrl] = useState('');
   const [viewDoc, setViewDoc] = useState<Doc | null>(null);
@@ -51,21 +33,8 @@ export default function KnowledgeBasePage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
-  const [initialized, setInitialized] = useState(false);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const loaded = loadDocs();
-    setDocs(loaded);
-    setInitialized(true);
-  }, []);
-
-  // Persist on change
-  useEffect(() => {
-    if (initialized) {
-      saveDocs(docs);
-    }
-  }, [docs, initialized]);
+  // Data is auto-persisted by usePersistentStorage
 
   const handleAddDoc = () => {
     if (!newTitle.trim() || !newContent.trim()) return;

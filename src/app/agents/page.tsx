@@ -5,6 +5,7 @@ import { Bot, Plus, Sparkles, Play, Trash2, Loader2, PenLine, X, Copy, Layout } 
 import { useSettings, callAI } from '../../lib/ai';
 import { useToast } from '../../components/Toast';
 import { useSavedContent } from '../../lib/useSavedContent';
+import { usePersistentStorage } from '../../lib/usePersistentStorage';
 import { useRouter } from 'next/navigation';
 
 interface Agent {
@@ -22,25 +23,6 @@ const defaultAgents: Agent[] = [
   { id: 2, name: '职场干货写手', role: '你是一位资深职场导师，擅长用数据和案例说话，逻辑清晰，干货满满。', style: '职场干货风 - 插座学院', used: 15 },
 ];
 
-function loadAgents(): Agent[] {
-  if (typeof window === 'undefined') return defaultAgents;
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved) as Agent[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {}
-  return defaultAgents;
-}
-
-function saveAgents(agents: Agent[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
-  } catch {}
-}
-
 const wordCountOptions = [500, 800, 1200, 1500, 2000, 2500];
 
 export default function AgentsPage() {
@@ -48,24 +30,13 @@ export default function AgentsPage() {
   const toast = useToast();
   const router = useRouter();
   const { save } = useSavedContent();
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const { data: agents, setData: setAgents } = usePersistentStorage<Agent[]>(STORAGE_KEY, defaultAgents);
   const [nextId, setNextId] = useState(0);
-  const [initialized, setInitialized] = useState(false);
 
-  // Load from localStorage on mount
+  // Derive nextId from agents
   useEffect(() => {
-    const loaded = loadAgents();
-    setAgents(loaded);
-    setNextId(loaded.reduce((max, a) => Math.max(max, a.id), 0) + 1);
-    setInitialized(true);
-  }, []);
-
-  // Persist to localStorage on every change after initialization
-  useEffect(() => {
-    if (initialized) {
-      saveAgents(agents);
-    }
-  }, [agents, initialized]);
+    setNextId(agents.reduce((max, a) => Math.max(max, a.id), 0) + 1);
+  }, [agents]);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');

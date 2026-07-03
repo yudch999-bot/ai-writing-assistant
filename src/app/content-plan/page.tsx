@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useSettings, callAI } from '../../lib/ai';
 import { useToast } from '../../components/Toast';
+import { usePersistentStorage } from '../../lib/usePersistentStorage';
 import { useRouter } from 'next/navigation';
 
 // ── Data Model ──
@@ -42,20 +43,6 @@ const STATUS_ICONS: Record<TopicStatus, any> = {
 
 const STORAGE_KEY = 'mobi-content-plan';
 
-function loadTopics(): ContentTopic[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) { const p = JSON.parse(saved); if (Array.isArray(p)) return p; }
-  } catch {}
-  return [];
-}
-
-function saveTopics(t: ContentTopic[]) {
-  if (typeof window === 'undefined') return;
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(t)); } catch {}
-}
-
 // ── Calendar Helpers ──
 
 function getMonthDays(year: number, month: number): (number | null)[] {
@@ -77,9 +64,8 @@ export default function ContentPlanPage() {
   const toast = useToast();
   const router = useRouter();
 
-  // Topics state
-  const [topics, setTopics] = useState<ContentTopic[]>([]);
-  const [initialized, setInitialized] = useState(false);
+  // Topics state — auto-persisted
+  const { data: topics, loaded, setData: setTopics } = usePersistentStorage<ContentTopic[]>(STORAGE_KEY, []);
 
   // Inspiration
   const [aiTopics, setAiTopics] = useState<any[]>([]);
@@ -97,17 +83,6 @@ export default function ContentPlanPage() {
   const [showAddTopic, setShowAddTopic] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newPublishDate, setNewPublishDate] = useState('');
-
-  // ── Init from localStorage ──
-  useEffect(() => {
-    const loaded = loadTopics();
-    setTopics(loaded);
-    setInitialized(true);
-  }, []);
-
-  useEffect(() => {
-    if (initialized) saveTopics(topics);
-  }, [topics, initialized]);
 
   // ── AI Topic Generation ──
   const generateTopics = async () => {
@@ -215,10 +190,10 @@ export default function ContentPlanPage() {
 
   // ── Init AI topics on first load ──
   useEffect(() => {
-    if (initialized && aiTopics.length === 0 && settings.apiKey) {
+    if (loaded && aiTopics.length === 0 && settings.apiKey) {
       generateTopics();
     }
-  }, [initialized]);
+  }, [loaded]);
 
   const days = getMonthDays(calYear, calMonth);
 

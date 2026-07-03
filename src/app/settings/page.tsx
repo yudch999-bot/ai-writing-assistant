@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Settings, Key, Sliders, Globe, Shield, User, Palette, Database, Bell, Check, Copy, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '../../components/Toast';
 import { useTheme } from '../../components/ThemeProvider';
+import { usePersistentStorage } from '../../lib/usePersistentStorage';
 
 const STORAGE_KEY = 'ai-writer-settings';
 
@@ -68,11 +69,12 @@ function SettingsContent() {
   const toast = useToast();
   const themeCtx = useTheme();
   const [activeSection, setActiveSection] = useState('api');
-  const [settings, setSettings] = useState<AppSettings>(defaults);
-  const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testMsg, setTestMsg] = useState('');
   const [showKey, setShowKey] = useState(false);
+
+  const { data: settings, setData: persistSave } = usePersistentStorage<AppSettings>(STORAGE_KEY, defaults);
+  const [saved, setSaved] = useState(false);
 
   // Handle ?tab=profile from TopBar
   useEffect(() => {
@@ -82,21 +84,16 @@ function SettingsContent() {
     if (tab === 'data') setActiveSection('data');
   }, [searchParams]);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setSettings({ ...defaults, ...JSON.parse(stored) });
-    } catch {}
-  }, []);
-
   const save = () => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch {}
+    persistSave(settings);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
   const update = (partial: Partial<AppSettings>) => {
-    setSettings(prev => ({ ...prev, ...partial }));
+    // Apply partial update immediately via persistSave
+    const next = { ...settings, ...partial };
+    persistSave(next);
     setSaved(false);
   };
 
@@ -426,10 +423,27 @@ function SettingsContent() {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => { const d = localStorage.getItem('ai-writer-settings'); if (d) { navigator.clipboard.writeText(d); toast.show('配置已导出到剪贴板'); } }} className="btn-secondary flex-1 justify-center">
+                  <button
+                    onClick={() => {
+                      const json = JSON.stringify(settings, null, 2);
+                      navigator.clipboard.writeText(json);
+                      toast.show('配置已导出到剪贴板');
+                    }}
+                    className="btn-secondary flex-1 justify-center"
+                  >
                     <Copy size={14} /> 导出配置
                   </button>
-                  <button onClick={() => { if (confirm('确定清除所有数据？API Key 和配置将被删除。')) { localStorage.removeItem('ai-writer-settings'); toast.show('已清除所有数据'); setTimeout(() => window.location.reload(), 1000); } }} className="btn-secondary flex-1 justify-center text-rose-400 border-rose-500/30">
+                  <button
+                    onClick={() => {
+                      if (confirm('确定清除所有数据？API Key 和配置将被删除。')) {
+                        fetch(`/api/storage?key=${STORAGE_KEY}`, { method: 'DELETE' }).catch(() => {});
+                        try { localStorage.removeItem(STORAGE_KEY); } catch {}
+                        toast.show('已清除所有数据');
+                        setTimeout(() => window.location.reload(), 1000);
+                      }
+                    }}
+                    className="btn-secondary flex-1 justify-center text-rose-400 border-rose-500/30"
+                  >
                     清除数据
                   </button>
                 </div>

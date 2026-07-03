@@ -3,6 +3,7 @@
 import { Bell, Search, ChevronDown, Settings, User, LogOut, ExternalLink } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { usePersistentStorage } from '../lib/usePersistentStorage';
 
 interface Notification {
   id: number;
@@ -21,25 +22,6 @@ const defaultNotifications: Notification[] = [
   { id: 4, title: '风格分析完成：情感治愈风', time: '3 小时前', read: true, path: '/style-clone' },
 ];
 
-function loadNotifications(): Notification[] {
-  if (typeof window === 'undefined') return defaultNotifications;
-  try {
-    const saved = localStorage.getItem(NOTIF_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved) as Notification[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {}
-  return defaultNotifications;
-}
-
-function saveNotifications(ns: Notification[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(ns));
-  } catch {}
-}
-
 export function TopBar() {
   const router = useRouter();
   const [showNotif, setShowNotif] = useState(false);
@@ -48,30 +30,31 @@ export function TopBar() {
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
 
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    setNotifications(loadNotifications());
-  }, []);
-
-  // Persist on change
-  useEffect(() => {
-    if (notifications.length > 0) {
-      saveNotifications(notifications);
-    }
-  }, [notifications]);
+  const { data: notifications, setData: setNotifications } =
+    usePersistentStorage<Notification[]>(NOTIF_STORAGE_KEY, defaultNotifications);
 
   const unread = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('ai-writer-settings');
-      if (stored) {
-        const s = JSON.parse(stored);
-        if (s.userName) setUserName(s.userName);
-      }
-    } catch {}
+    // Load user name from server or localStorage fallback
+    async function loadUserName() {
+      try {
+        const res = await fetch('/api/storage?key=ai-writer-settings');
+        if (res.ok) {
+          const s = await res.json();
+          if (s?.userName) { setUserName(s.userName); return; }
+        }
+      } catch {}
+      // Fallback
+      try {
+        const stored = localStorage.getItem('ai-writer-settings');
+        if (stored) {
+          const s = JSON.parse(stored);
+          if (s.userName) setUserName(s.userName);
+        }
+      } catch {}
+    }
+    loadUserName();
   }, []);
 
   useEffect(() => {
