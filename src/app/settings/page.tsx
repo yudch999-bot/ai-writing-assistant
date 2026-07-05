@@ -6,12 +6,14 @@ import { Settings, Key, Sliders, Globe, Shield, User, Palette, Database, Bell, C
 import { useToast } from '../../components/Toast';
 import { useTheme } from '../../components/ThemeProvider';
 import { usePersistentStorage } from '../../lib/usePersistentStorage';
+import { useSEO } from '../../lib/useSEO';
 
 const STORAGE_KEY = 'ai-writer-settings';
 
 interface AppSettings {
   apiKey: string;
   model: string;
+  provider: string;
   temperature: number;
   deAiStrength: number;
   wxAppId: string;
@@ -30,6 +32,7 @@ interface AppSettings {
 const defaults: AppSettings = {
   apiKey: '',
   model: 'deepseek-chat',
+  provider: 'deepseek',
   temperature: 0.7,
   deAiStrength: 80,
   wxAppId: '',
@@ -45,6 +48,21 @@ const defaults: AppSettings = {
   notifyError: true,
 };
 
+type NotifyKey = 'notifyGen' | 'notifyDetect' | 'notifyHot' | 'notifyError';
+
+interface NotifyItem {
+  label: string;
+  desc: string;
+  key: NotifyKey;
+}
+
+const notifyItems: NotifyItem[] = [
+  { label: 'AI 生成完成通知', desc: '文章生成或改写完成后发送通知', key: 'notifyGen' },
+  { label: '检测完成通知', desc: '内容检测完成后发送通知', key: 'notifyDetect' },
+  { label: '热点更新通知', desc: '热点数据刷新后通知', key: 'notifyHot' },
+  { label: '错误提醒', desc: 'AI 请求失败时通知', key: 'notifyError' },
+];
+
 const sections = [
   { id: 'api', label: 'API 配置', icon: Key },
   { id: 'model', label: '模型设置', icon: Sliders },
@@ -57,6 +75,7 @@ const sections = [
 ];
 
 export default function SettingsPage() {
+  useSEO('设置中心');
   return (
     <Suspense fallback={null}>
       <SettingsContent />
@@ -107,6 +126,7 @@ function SettingsContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: settings.model,
+          provider: settings.provider,
           messages: [{ role: 'user', content: '回复"连接成功"四个字，不要其他内容' }],
           apiKey: settings.apiKey,
         }),
@@ -130,7 +150,7 @@ function SettingsContent() {
           <Settings size={22} className="text-text" />
           设置中心
         </h1>
-        <p className="text-[var(--color-text-secondary)] mt-1">配置 DeepSeek API 密钥，开启所有 AI 功能</p>
+        <p className="text-[var(--color-text-secondary)] mt-1">配置 API 密钥，选择 AI 提供商，开启所有 AI 功能</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -161,7 +181,7 @@ function SettingsContent() {
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">DeepSeek API Key</label>
+                  <label className="block text-sm font-medium mb-1">AI API Key</label>
                   <div className="relative">
                     <input
                       type={showKey ? 'text' : 'password'}
@@ -178,7 +198,7 @@ function SettingsContent() {
                     </button>
                   </div>
                   <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-                    密钥仅保存在本地浏览器，不会上传到服务器。前往 <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener" className="text-[var(--color-primary-light)] hover:underline">platform.deepseek.com</a> 获取。
+                    密钥仅保存在本地浏览器，不会上传到服务器。根据选择的提供商，前往对应平台获取 API Key。
                   </p>
                 </div>
 
@@ -200,11 +220,11 @@ function SettingsContent() {
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm">
                   <p className="font-medium text-amber-400 flex items-center gap-1"><AlertCircle size={14} /> 使用说明</p>
                   <ul className="mt-2 space-y-1 text-xs text-[var(--color-text-secondary)]">
-                    <li>1. 注册 DeepSeek 账号并登录</li>
-                    <li>2. 在 <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener" className="text-[var(--color-primary-light)]">API Keys</a> 页面创建 Key</li>
-                    <li>3. 复制 Key 粘贴到上方输入框</li>
+                    <li>1. 在「模型设置」中选择你需要的 AI 提供商</li>
+                    <li>2. 前往对应平台注册账号并创建 API Key</li>
+                    <li>3. 将 API Key 粘贴到上方输入框</li>
                     <li>4. 点击「保存配置」并「测试连接」</li>
-                    <li>5. 之后所有 AI 功能都会使用 DeepSeek 模型</li>
+                    <li>5. 之后所有 AI 功能都会使用选择的提供商和模型</li>
                   </ul>
                 </div>
               </div>
@@ -216,12 +236,70 @@ function SettingsContent() {
               <h2 className="font-semibold">生成参数</h2>
               <div className="space-y-5">
                 <div>
+                  <label className="block text-sm font-medium mb-1">AI 提供商</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 'deepseek', label: 'DeepSeek' },
+                      { id: 'openai', label: 'OpenAI' },
+                      { id: 'claude', label: 'Anthropic Claude' },
+                      { id: 'siliconflow', label: 'SiliconFlow' },
+                    ].map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          const modelMap: Record<string, string> = {
+                            deepseek: 'deepseek-chat',
+                            openai: 'gpt-4o-mini',
+                            claude: 'claude-sonnet-4-20250514',
+                            siliconflow: 'Pro/deepseek-ai/DeepSeek-V3',
+                          };
+                          update({ provider: p.id, model: modelMap[p.id] });
+                        }}
+                        className={`p-3 rounded-xl text-sm font-medium border transition-all ${
+                          settings.provider === p.id
+                            ? 'border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 text-[var(--color-primary-light)]'
+                            : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:text-text'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
                   <label className="block text-sm font-medium mb-1">AI 模型</label>
-                  <select className="input-field" value={settings.model} onChange={e => update({ model: e.target.value })}>
-                    <option value="deepseek-chat">DeepSeek V4 Flash</option>
-                    <option value="deepseek-reasoner">DeepSeek V4 Pro</option>
+                  <select
+                    className="input-field"
+                    value={settings.model}
+                    onChange={e => update({ model: e.target.value })}
+                  >
+                    {settings.provider === 'deepseek' && (
+                      <>
+                        <option value="deepseek-chat">DeepSeek V4 Flash</option>
+                        <option value="deepseek-reasoner">DeepSeek V4 Pro</option>
+                      </>
+                    )}
+                    {settings.provider === 'openai' && (
+                      <>
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="gpt-4.1-nano">GPT-4.1 Nano</option>
+                      </>
+                    )}
+                    {settings.provider === 'claude' && (
+                      <>
+                        <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                        <option value="claude-haiku-4-20251001">Claude Haiku 4</option>
+                      </>
+                    )}
+                    {settings.provider === 'siliconflow' && (
+                      <>
+                        <option value="Pro/deepseek-ai/DeepSeek-V3">DeepSeek V3</option>
+                        <option value="Pro/deepseek-ai/DeepSeek-R1">DeepSeek R1</option>
+                      </>
+                    )}
                   </select>
-                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">Flash 适合日常创作，Pro 适合深度分析</p>
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">根据选择的提供商自动切换可用模型</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">创意温度：{settings.temperature}</label>
@@ -339,7 +417,7 @@ function SettingsContent() {
                   <p className="text-amber-400 flex items-center gap-1"><AlertCircle size={14} /> 安全建议</p>
                   <ul className="mt-2 space-y-1 text-xs text-[var(--color-text-secondary)]">
                     <li>• 不要将 API Key 分享给他人</li>
-                    <li>• 定期在 DeepSeek 平台轮换 API Key</li>
+                    <li>• 定期在 AI 提供商平台轮换 API Key</li>
                     <li>• 本工具所有数据仅存储在浏览器本地</li>
                     <li>• AI 请求通过服务器转发，不会记录内容</li>
                   </ul>
@@ -436,8 +514,8 @@ function SettingsContent() {
                   <button
                     onClick={() => {
                       if (confirm('确定清除所有数据？API Key 和配置将被删除。')) {
-                        fetch(`/api/storage?key=${STORAGE_KEY}`, { method: 'DELETE' }).catch(() => {});
-                        try { localStorage.removeItem(STORAGE_KEY); } catch {}
+                        fetch(`/api/storage?key=${STORAGE_KEY}`, { method: 'DELETE' }).catch(e => console.warn('[settings] Server delete failed:', e));
+                        try { localStorage.removeItem(STORAGE_KEY); } catch (e) { console.warn('[settings] localStorage delete failed:', e); }
                         toast.show('已清除所有数据');
                         setTimeout(() => window.location.reload(), 1000);
                       }
@@ -460,23 +538,24 @@ function SettingsContent() {
               <h2 className="font-semibold">通知设置</h2>
               <p className="text-sm text-[var(--color-text-secondary)]">管理应用通知和提醒</p>
               <div className="space-y-3">
-                {[
-                  { label: 'AI 生成完成通知', desc: '文章生成或改写完成后发送通知', key: 'notifyGen' },
-                  { label: '检测完成通知', desc: '内容检测完成后发送通知', key: 'notifyDetect' },
-                  { label: '热点更新通知', desc: '热点数据刷新后通知', key: 'notifyHot' },
-                  { label: '错误提醒', desc: 'AI 请求失败时通知', key: 'notifyError' },
-                ].map(item => (
+                {notifyItems.map(item => {
+                const checked = settings[item.key] ?? true;
+                return (
                   <div key={item.key} className="flex items-center justify-between p-4 rounded-xl bg-[var(--color-surface-2)]">
                     <div>
                       <p className="text-sm font-medium">{item.label}</p>
                       <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{item.desc}</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" checked={true} onChange={() => {}} />
+                      <input type="checkbox" className="sr-only peer"
+                        checked={checked}
+                        onChange={() => update({ [item.key]: !checked })}
+                      />
                       <div className="w-9 h-5 bg-[var(--color-surface-3)] rounded-full peer peer-checked:bg-[var(--color-primary)] after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
                     </label>
                   </div>
-                ))}
+                );
+              })}
                 <p className="text-xs text-[var(--color-text-secondary)]">通知功能需要浏览器允许通知权限</p>
               </div>
             </>

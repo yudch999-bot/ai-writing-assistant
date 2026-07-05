@@ -44,7 +44,9 @@ export function TopBar() {
           const s = await res.json();
           if (s?.userName) { setUserName(s.userName); return; }
         }
-      } catch {}
+      } catch (e) {
+        console.warn('[TopBar] Failed to load user name from server:', e);
+      }
       // Fallback
       try {
         const stored = localStorage.getItem('ai-writer-settings');
@@ -52,7 +54,9 @@ export function TopBar() {
           const s = JSON.parse(stored);
           if (s.userName) setUserName(s.userName);
         }
-      } catch {}
+      } catch (e) {
+        console.warn('[TopBar] Failed to load user name from localStorage:', e);
+      }
     }
     loadUserName();
   }, []);

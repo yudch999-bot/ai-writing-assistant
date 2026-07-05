@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Layout, Smartphone, Copy, Sparkles, Bold, Italic, Heading1, Heading2, Heading3, Quote, List, ListOrdered, ImageIcon, SeparatorHorizontal, ChevronDown, ChevronUp, RotateCcw, Lightbulb, Bookmark, Star, Columns3, MessagesSquare, Target } from 'lucide-react';
 import { useToast } from '../../components/Toast';
+import { useSEO } from '../../lib/useSEO';
 
 // ── Template Definitions ──
 
@@ -259,6 +260,7 @@ function escapeHtml(s: string): string {
 // ── Component ──
 
 export default function FormattingPage() {
+  useSEO('公众号排版');
   const toast = useToast();
   const [content, setContent] = useState('');
   const [themeId, setThemeId] = useState('warm-beige');

@@ -10,6 +10,7 @@ import { useSettings, callAI } from '../../lib/ai';
 import { useToast } from '../../components/Toast';
 import { usePersistentStorage } from '../../lib/usePersistentStorage';
 import { useRouter } from 'next/navigation';
+import { useSEO } from '../../lib/useSEO';
 
 // ── Data Model ──
 
@@ -60,6 +61,7 @@ const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
 // ── Component ──
 
 export default function ContentPlanPage() {
+  useSEO('内容规划');
   const { settings } = useSettings();
   const toast = useToast();
   const router = useRouter();
@@ -100,11 +102,13 @@ export default function ContentPlanPage() {
         ],
         settings.apiKey,
         settings.model,
+        settings.provider,
       );
       const cleaned = res.replace(/```json|```/g, '').trim();
       const parsed = JSON.parse(cleaned);
       if (Array.isArray(parsed)) setAiTopics(parsed.slice(0, 5));
-    } catch {
+    } catch (e) {
+      console.warn('[content-plan] AI topic generation failed:', e);
       setAiTopics([
         { title: '2026年最被低估的5个AI工具，第3个你可能没用过', heat: 88, reason: 'AI工具话题持续热门，数字型标题点击率高', tags: 'AI工具,效率提升' },
         { title: '月薪3万和月薪8千的差距，不在能力在这3点', heat: 92, reason: '职场焦虑是永恒痛点，对比型标题引发转发', tags: '职场成长,认知提升' },
@@ -259,11 +263,15 @@ export default function ContentPlanPage() {
                   ],
                   settings.apiKey!,
                   settings.model,
+                  settings.provider,
                 );
                 const cleaned = res.replace(/```json|```/g, '').trim();
                 const parsed = JSON.parse(cleaned);
                 if (Array.isArray(parsed)) setAiTopics(parsed.slice(0, 3));
-              } catch {}
+              } catch (e) {
+                console.warn('[content-plan] Custom prompt generation failed:', e);
+                toast.show('生成失败，请重试');
+              }
               setLoadingAI(false);
               setCustomPrompt('');
               setShowCustom(false);

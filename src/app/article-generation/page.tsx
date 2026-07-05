@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { Layers, Sparkles, Loader2, Copy, BookOpen, AlertCircle, LoaderCircle } from 'lucide-react';
+import { useState, useEffect, Suspense, useRef } from 'react';
+import { Layers, Sparkles, Loader2, Copy, BookOpen, AlertCircle, LoaderCircle, X, FileDown } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useSettings, callAI } from '../../lib/ai';
 import { useToast } from '../../components/Toast';
+import { downloadMarkdown } from '../../lib/export';
 import { SaveButton } from '../../components/SaveButton';
 import { WebSearchToggle } from '../../components/WebSearchToggle';
 import Link from 'next/link';
+import { useSEO } from '../../lib/useSEO';
 
 const articleTypes = [
   { id: 'gzh', label: '公众号爆款文' },
@@ -26,6 +28,7 @@ const articleModes = [
 ];
 
 export default function ArticleGenerationPage() {
+  useSEO('文章生成');
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center h-64 text-text-secondary gap-3">
@@ -52,6 +55,7 @@ function ArticleGenerationContent() {
   const [error, setError] = useState('');
   const [webSearch, setWebSearch] = useState(false);
   const [searching, setSearching] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const topic = searchParams.get('topic');
 
   useEffect(() => {
@@ -62,6 +66,8 @@ function ArticleGenerationContent() {
     if (!settings.apiKey) { setError('请先在设置中心配置 DeepSeek API Key'); return; }
     if (!title.trim()) return;
 
+    const controller = new AbortController();
+    abortRef.current = controller;
     setGenerating(true);
     setError('');
     setResult(null);
@@ -83,7 +89,9 @@ function ArticleGenerationContent() {
           if (searchRes.ok && searchData.context) {
             searchContext = `\n\n===== 以下是联网搜索到的相关信息 =====\n${searchData.context}\n===== 请基于以上信息结合你的知识来写 =====\n`;
           }
-        } catch {}
+        } catch (e) {
+          console.warn('[article-generation] Web search failed:', e);
+        }
         setSearching(false);
       }
 
@@ -108,10 +116,19 @@ ${background ? `背景素材：${background}` : ''}
         ],
         settings.apiKey,
         settings.model,
+        settings.provider,
+        undefined,
+        undefined,
+        undefined,
+        controller.signal,
       );
 
       setResult(res);
     } catch (e: unknown) {
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        setError('');
+        return;
+      }
       setError(e instanceof Error ? e.message : '生成失败');
     }
     setGenerating(false);
@@ -187,9 +204,20 @@ ${background ? `背景素材：${background}` : ''}
 
           {error && <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-sm text-rose-400">{error}</div>}
 
-          <button onClick={generate} disabled={generating || !title.trim() || !settings.apiKey} className="btn-primary w-full justify-center">
-            {generating ? <><Loader2 size={16} className="animate-spin" /> DeepSeek 创作中...</> : <><Sparkles size={16} /> 生成文章</>}
-          </button>
+          {generating ? (
+            <div className="flex gap-2">
+              <button disabled className="btn-primary w-full justify-center opacity-70">
+                <Loader2 size={16} className="animate-spin" /> DeepSeek 创作中...
+              </button>
+              <button onClick={() => { abortRef.current?.abort(); setGenerating(false); }} className="btn-secondary px-4 text-rose-400 border-rose-500/30">
+                <X size={16} /> 取消
+              </button>
+            </div>
+          ) : (
+            <button onClick={generate} disabled={generating || !title.trim() || !settings.apiKey} className="btn-primary w-full justify-center">
+              <Sparkles size={16} /> 生成文章
+            </button>
+          )}
         </div>
 
         <div className="lg:col-span-3 glass-card p-6">
@@ -199,6 +227,7 @@ ${background ? `背景素材：${background}` : ''}
               <div className="flex items-center gap-2">
                 <SaveButton type="文章" title={title} content={result || ''} />
                 <button onClick={() => { navigator.clipboard.writeText(result || ''); toast.show('已复制'); }} className="text-xs text-primary-light hover:underline flex items-center gap-1"><Copy size={12} /> 复制</button>
+                <button onClick={() => downloadMarkdown(result || '', title || 'article')} className="text-xs text-[var(--color-primary-light)] hover:underline flex items-center gap-1"><FileDown size={12} /> 下载 Markdown</button>
               </div>
             )}
           </div>

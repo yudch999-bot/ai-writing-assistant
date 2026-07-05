@@ -37,8 +37,8 @@ export function usePersistentStorage<T>(key: string, defaultValue: T) {
             return;
           }
         }
-      } catch {
-        // Server unavailable — fall through to localStorage
+      } catch (e) {
+        console.warn(`[usePersistentStorage] Server load failed for "${key}":`, e);
       }
 
       // Fallback: try localStorage
@@ -49,7 +49,9 @@ export function usePersistentStorage<T>(key: string, defaultValue: T) {
           setDataState(parsed);
           prevDataRef.current = parsed;
         }
-      } catch {}
+      } catch (e) {
+        console.warn(`[usePersistentStorage] localStorage fallback failed for "${key}":`, e);
+      }
       setLoaded(true);
     }
 
@@ -69,9 +71,12 @@ export function usePersistentStorage<T>(key: string, defaultValue: T) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ key, value: current }),
         });
-      } catch {
-        // Server unavailable — save to localStorage as fallback
-        try { localStorage.setItem(key, JSON.stringify(current)); } catch {}
+      } catch (e) {
+        console.warn(`[usePersistentStorage] Server save failed for "${key}":`, e);
+        // Fallback: localStorage
+        try { localStorage.setItem(key, JSON.stringify(current)); } catch (e2) {
+          console.error(`[usePersistentStorage] localStorage save also failed for "${key}":`, e2);
+        }
       }
     }, 300);
 

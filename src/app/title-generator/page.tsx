@@ -7,12 +7,14 @@ import { useToast } from '../../components/Toast';
 import { SaveButton } from '../../components/SaveButton';
 import { WebSearchToggle } from '../../components/WebSearchToggle';
 import Link from 'next/link';
+import { useSEO } from '../../lib/useSEO';
 
 const contentTypes = ['公众号爆款文', '情感共鸣', '职场干货', '搞钱攻略', '热点追踪', '故事叙事'];
 const titleStyles = ['犀利直击', '温情治愈', '幽默反转', '数字量化', '悬念追问'];
 const audiences = ['职场人', '宝妈', '学生', '创业者', '管理者', '自由职业者'];
 
 export default function TitleGeneratorPage() {
+  useSEO('标题生成');
   const { settings, loaded } = useSettings();
   const toast = useToast();
   const [topic, setTopic] = useState('');
@@ -51,7 +53,9 @@ export default function TitleGeneratorPage() {
           });
           const searchData = await searchRes.json();
           if (searchRes.ok && searchData.context) searchContext = `\n\n以下是联网搜索到的相关信息：\n${searchData.context}\n`;
-        } catch {}
+        } catch (e) {
+          console.warn('[title-generator] Web search failed:', e);
+        }
         setSearching(false);
       }
       const prompt = `${searchContext}你是一位公众号爆款标题专家。请根据以下信息生成 ${count} 个爆款标题。
@@ -74,6 +78,7 @@ ${audience ? `目标人群：${audience}` : ''}
         ],
         settings.apiKey,
         settings.model,
+        settings.provider,
       );
 
       const lines = res.split('\n').filter(l => l.trim() && !l.match(/^\d+[\.\、]/) && !l.startsWith('-'));

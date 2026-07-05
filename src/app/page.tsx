@@ -1,19 +1,28 @@
 'use client';
 
-import { Sparkles, Flame, PenLine, FileText, RotateCcw, ShieldCheck, Layers, Target, Zap } from 'lucide-react';
+import { Sparkles, Flame, PenLine, FileText, RotateCcw, ShieldCheck, Layers, Target, Zap, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useSEO } from '../lib/useSEO';
 
 interface Stat {
   label: string;
   value: string;
   change: string;
-  icon: any;
+  icon: LucideIcon;
   color: string;
 }
 
+interface HotTopic {
+  rank: number;
+  title: string;
+  source: string;
+  heat: string;
+}
+
 export default function HomePage() {
+  useSEO('首页', 'AI 赋能公众号创作，一键复刻爆款风格，追踪全网热点，生成去 AI 味的原创文章');
   const router = useRouter();
   const [stats, setStats] = useState<Stat[]>([
     { label: '风格克隆数', value: '0', change: '-', icon: PenLine, color: 'from-[var(--color-primary)] to-purple-500' },
@@ -27,27 +36,48 @@ export default function HomePage() {
       // Count saved items
       const saved = localStorage.getItem('ai-writer-saved-content');
       const items = saved ? JSON.parse(saved) : [];
-
       const totalItems = items.length;
       const today = new Date().toLocaleDateString('zh-CN');
       const todayItems = items.filter((i: any) => i.createdAt?.includes(today));
       const totalChars = items.reduce((sum: number, i: any) => sum + (i.content?.length || 0), 0);
-
-      // Count hot topics
-      let hotCount = 0;
-      try {
-        const hotModule = localStorage.getItem('hot-topics-count');
-        hotCount = hotModule ? parseInt(hotModule) : 120;
-      } catch { hotCount = 120; }
-
-      setStats([
-        { label: '风格克隆数', value: String(totalItems), change: todayItems.length > 0 ? `+${todayItems.length}` : '-', icon: PenLine, color: 'from-[var(--color-primary)] to-purple-500' },
-        { label: '今日生成', value: String(todayItems.length || 0), change: totalItems > 0 ? '+1' : '-', icon: Zap, color: 'from-amber-500 to-orange-500' },
-        { label: '总字数', value: totalChars > 10000 ? `${(totalChars / 10000).toFixed(1)}w` : String(totalChars), change: totalChars > 0 ? `+${totalChars}` : '-', icon: FileText, color: 'from-emerald-500 to-teal-500' },
-        { label: '热点采集', value: String(hotCount), change: '实时', icon: Flame, color: 'from-rose-500 to-pink-500' },
+      setStats(prev => [
+        { ...prev[0], value: String(totalItems), change: todayItems.length > 0 ? `+${todayItems.length}` : '-' },
+        { ...prev[1], value: String(todayItems.length || 0), change: totalItems > 0 ? '+1' : '-' },
+        { ...prev[2], value: totalChars > 10000 ? `${(totalChars / 10000).toFixed(1)}w` : String(totalChars), change: totalChars > 0 ? `+${totalChars}` : '-' },
+        { ...prev[3], change: '实时' },
       ]);
-    } catch {}
+    } catch (e) {
+      console.warn('[home] Failed to load stats:', e);
+    }
+
+    // Fetch real hot topics for dashboard
+    fetch('/api/hot?platforms=微博热搜')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.data?.['微博热搜']) {
+          const topics = data.data['微博热搜'].slice(0, 5).map((t: any, i: number) => ({
+            rank: i + 1,
+            title: t.title,
+            source: '微博热搜',
+            heat: t.heat,
+          }));
+          setHotTopics(topics);
+          setStats(prev => [{ ...prev[3], value: String(data.data['微博热搜'].length + '条') }]);
+        }
+      })
+      .catch(() => {
+        // Fallback topics for dashboard
+        setHotTopics([
+          { rank: 1, title: '2026年AI工具推荐：这5款让工作效率翻倍', source: '微博热搜', heat: '2.3亿' },
+          { rank: 2, title: '公众号流量主收益下降？这3个新打法值得尝试', source: '微信热点', heat: '1.8亿' },
+          { rank: 3, title: '年轻人为什么开始「反向消费」了', source: '知乎热榜', heat: '1.5亿' },
+          { rank: 4, title: '7月新规来了！涉及你的工资、社保和公积金', source: '百度热榜', heat: '1.2亿' },
+          { rank: 5, title: '自媒体人必看：2026年内容创作的5个趋势', source: '今日头条', heat: '9800万' },
+        ]);
+      });
   }, []);
+
+  const [hotTopics, setHotTopics] = useState<HotTopic[]>([]);
 
   const quickActions = [
     { href: '/style-clone', label: '风格复刻', desc: '分析文章风格，生成专属提示词', icon: PenLine, gradient: 'from-[var(--color-primary)]/20 to-purple-500/20', iconColor: 'text-[var(--color-primary-light)]' },
@@ -56,14 +86,6 @@ export default function HomePage() {
     { href: '/article-generation', label: '文章生成', desc: 'AI 生成完整公众号文章', icon: Layers, gradient: 'from-emerald-500/20 to-teal-500/20', iconColor: 'text-emerald-400' },
     { href: '/rewriting', label: '文章仿写', desc: '100% 原创深度改写', icon: RotateCcw, gradient: 'from-sky-500/20 to-blue-500/20', iconColor: 'text-sky-400' },
     { href: '/content-detection', label: '内容检测', desc: '敏感词、AI 痕迹、原创度检测', icon: ShieldCheck, gradient: 'from-violet-500/20 to-purple-500/20', iconColor: 'text-violet-400' },
-  ];
-
-  const hotTopics = [
-    { rank: 1, title: '2026年AI工具推荐：这5款让工作效率翻倍', source: '微博热搜', heat: '2.3亿' },
-    { rank: 2, title: '公众号流量主收益下降？这3个新打法值得尝试', source: '微信热点', heat: '1.8亿' },
-    { rank: 3, title: '年轻人为什么开始「反向消费」了', source: '知乎热榜', heat: '1.5亿' },
-    { rank: 4, title: '7月新规来了！涉及你的工资、社保和公积金', source: '百度热榜', heat: '1.2亿' },
-    { rank: 5, title: '自媒体人必看：2026年内容创作的5个趋势', source: '今日头条', heat: '9800万' },
   ];
 
   return (

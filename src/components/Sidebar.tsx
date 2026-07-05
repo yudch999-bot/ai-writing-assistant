@@ -20,6 +20,7 @@ import {
   Menu,
   Clock,
   CalendarDays,
+  Bookmark,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -32,6 +33,7 @@ const navItems = [
   { href: '/article-generation', label: '文章生成', icon: Layers },
   { href: '/rewriting', label: '文章仿写', icon: RotateCcw },
   { href: '/content-detection', label: '内容检测', icon: ShieldCheck },
+  { href: '/templates', label: '文章模板', icon: Bookmark },
   { href: '/formatting', label: '公众号排版', icon: Layout },
   { href: '/multi-platform', label: '多平台矩阵', icon: Menu },
   { href: '/agents', label: '智能体', icon: Bot },

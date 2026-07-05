@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Upload, FileText, Plus, Search, Link, Trash2, X, Eye, Copy, Loader2, Save } from 'lucide-react';
 import { useToast } from '../../components/Toast';
 import { usePersistentStorage } from '../../lib/usePersistentStorage';
+import { useSEO } from '../../lib/useSEO';
 
 interface Doc {
   id: number;
@@ -24,6 +25,7 @@ const defaultDocs: Doc[] = [
 ];
 
 export default function KnowledgeBasePage() {
+  useSEO('知识库');
   const toast = useToast();
   const { data: docs, loaded, setData: setDocs } = usePersistentStorage<Doc[]>(KB_STORAGE_KEY, defaultDocs);
   const [searchQ, setSearchQ] = useState('');

@@ -58,7 +58,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         if (s.theme) setThemeState(s.theme);
         if (s.accentColor) setAccentState(s.accentColor);
       }
-    } catch {}
+    } catch (e) {
+      console.warn('[ThemeProvider] Failed to load settings from localStorage:', e);
+    }
     setMounted(true);
   }, []);
 
@@ -77,7 +79,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const s = stored ? JSON.parse(stored) : {};
       s.theme = t;
       localStorage.setItem('ai-writer-settings', JSON.stringify(s));
-    } catch {}
+    } catch (e) {
+      console.warn('[ThemeProvider] Failed to save theme:', e);
+    }
   }, []);
 
   const setAccent = useCallback((c: string) => {
@@ -87,7 +91,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const s = stored ? JSON.parse(stored) : {};
       s.accentColor = c;
       localStorage.setItem('ai-writer-settings', JSON.stringify(s));
-    } catch {}
+    } catch (e) {
+      console.warn('[ThemeProvider] Failed to save accent color:', e);
+    }
   }, []);
 
   // Determine effective theme

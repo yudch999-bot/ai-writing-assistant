@@ -79,13 +79,17 @@ export async function POST(req: NextRequest) {
     // Tier 1: Free products API (most reliable, returns real content)
     try {
       searchResults = await searchViaFreeApi(query);
-    } catch {}
+    } catch (e) {
+      console.warn('[search] Free API failed:', e);
+    }
 
     // Tier 2: DuckDuckGo instant answer
     if (searchResults.length < 3) {
       try {
         searchResults = await searchDdgInstantAnswer(query);
-      } catch {}
+      } catch (e) {
+        console.warn('[search] DuckDuckGo fallback failed:', e);
+      }
     }
 
     // Build search context

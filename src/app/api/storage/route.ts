@@ -5,7 +5,9 @@ import path from 'path';
 const DATA_DIR = path.join(process.cwd(), 'data');
 
 async function ensureDataDir() {
-  try { await fs.mkdir(DATA_DIR, { recursive: true }); } catch {}
+  try { await fs.mkdir(DATA_DIR, { recursive: true }); } catch (e) {
+    console.error('[storage] Failed to create data dir:', e);
+  }
 }
 
 function getFilePath(key: string): string {
@@ -26,8 +28,11 @@ export async function GET(req: NextRequest) {
   try {
     const data = await fs.readFile(filePath, 'utf-8');
     return NextResponse.json(JSON.parse(data));
-  } catch {
+  } catch (e) {
     // File doesn't exist — return null
+    if ((e as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+      console.error('[storage] GET error:', e);
+    }
     return NextResponse.json(null);
   }
 }
@@ -54,8 +59,10 @@ export async function DELETE(req: NextRequest) {
   const filePath = getFilePath(key);
   try {
     await fs.unlink(filePath);
-  } catch {
-    // File might not exist — that's fine
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+      console.error('[storage] DELETE error:', e);
+    }
   }
 
   return NextResponse.json({ success: true });

@@ -7,6 +7,7 @@ import { useToast } from '../../components/Toast';
 import { useSavedContent } from '../../lib/useSavedContent';
 import { usePersistentStorage } from '../../lib/usePersistentStorage';
 import { useRouter } from 'next/navigation';
+import { useSEO } from '../../lib/useSEO';
 
 interface Agent {
   id: number;
@@ -26,6 +27,7 @@ const defaultAgents: Agent[] = [
 const wordCountOptions = [500, 800, 1200, 1500, 2000, 2500];
 
 export default function AgentsPage() {
+  useSEO('智能体');
   const { settings } = useSettings();
   const toast = useToast();
   const router = useRouter();
@@ -81,9 +83,13 @@ export default function AgentsPage() {
         ],
         settings.apiKey,
         settings.model,
+        settings.provider,
       );
       setNewRole(res.trim());
-    } catch {}
+    } catch (e) {
+      console.warn('[agents] AI role generation failed:', e);
+      toast.show('角色生成失败，请手动输入');
+    }
     setGenerating(false);
   };
 
@@ -123,6 +129,7 @@ export default function AgentsPage() {
         ],
         settings.apiKey,
         settings.model,
+        settings.provider,
       );
       setWritingResult(res);
       save('智能体', topic, res);
@@ -130,7 +137,10 @@ export default function AgentsPage() {
       setAgents(prev => prev.map(a =>
         a.id === writingAgent.id ? { ...a, used: a.used + 1 } : a
       ));
-    } catch {}
+    } catch (e) {
+      console.warn('[agents] AI write failed:', e);
+      toast.show('写作失败，请重试');
+    }
     setWriting(false);
   };
 

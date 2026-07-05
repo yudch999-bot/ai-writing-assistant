@@ -5,6 +5,7 @@ import { Menu, Sparkles, Loader2, Copy, AlertCircle } from 'lucide-react';
 import { useSettings, callAI } from '../../lib/ai';
 import { useToast } from '../../components/Toast';
 import Link from 'next/link';
+import { useSEO } from '../../lib/useSEO';
 
 const tones = [
   { id: 'daily', label: '日常分享', desc: '轻松随性的生活记录', icon: '☀️' },
@@ -33,6 +34,7 @@ const platformNames: Record<string, string> = {
 };
 
 export default function MultiPlatformPage() {
+  useSEO('多平台矩阵');
   const { settings } = useSettings();
   const toast = useToast();
   const [topic, setTopic] = useState('');
@@ -93,9 +95,8 @@ export default function MultiPlatformPage() {
         ],
         settings.apiKey,
         settings.model,
+        settings.provider,
       );
-
-      // Parse the results by platform sections
       const parsed: Record<string, string> = {};
       const platformKeys: Record<string, string> = {
         '朋友圈': 'moments', '微博': 'weibo', '小红书': 'xhs',

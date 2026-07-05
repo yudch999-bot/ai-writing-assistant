@@ -6,13 +6,23 @@ import { useSettings, callAI } from '../../lib/ai';
 import { useToast } from '../../components/Toast';
 import { SaveButton } from '../../components/SaveButton';
 import Link from 'next/link';
+import { useSEO } from '../../lib/useSEO';
+
+interface DetectionResult {
+  aiScore: number;
+  aiPassed: boolean;
+  sensitiveWords: { word: string; level: string; suggestion: string }[];
+  originality: number;
+  suggestions: string[];
+}
 
 export default function ContentDetectionPage() {
+  useSEO('内容检测');
   const { settings, loaded } = useSettings();
   const toast = useToast();
   const [content, setContent] = useState('');
   const [detecting, setDetecting] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<DetectionResult | null>(null);
   const [error, setError] = useState('');
   const [optimizing, setOptimizing] = useState(false);
   const [optimizedContent, setOptimizedContent] = useState('');
@@ -50,6 +60,7 @@ ${content.slice(0, 2000)}
         ],
         settings.apiKey,
         settings.model,
+        settings.provider,
       );
 
       let jsonStr = res.trim();
@@ -73,7 +84,7 @@ ${content.slice(0, 2000)}
 
     try {
       const sensitiveInfo = result.sensitiveWords?.length > 0
-        ? `敏感词：${result.sensitiveWords.map((s: any) => `${s.word} → ${s.suggestion}`).join('、')}`
+        ? `敏感词：${result.sensitiveWords.map((s) => `${s.word} → ${s.suggestion}`).join('、')}`
         : '无明显敏感词';
 
       const prompt = `请把下面的文章改写成"真人写的感觉"，彻底消除 AI 痕迹。
@@ -82,7 +93,7 @@ ${content.slice(0, 2000)}
 ${content.slice(0, 2500)}
 
 ${result.aiScore > 50 ? `检测到该文章 AI 痕迹过重（${result.aiScore}%），需要彻底改写。` : ''}
-${result.sensitiveWords?.length > 0 ? `需替换敏感词：${result.sensitiveWords.map((s: any) => `${s.word}→${s.suggestion}`).join('、')}` : ''}
+${result.sensitiveWords?.length > 0 ? `需替换敏感词：${result.sensitiveWords.map((s) => `${s.word}→${s.suggestion}`).join('、')}` : ''}
 
 ===== 必须遵守的改写规则 =====
 
@@ -118,6 +129,7 @@ ${result.sensitiveWords?.length > 0 ? `需替换敏感词：${result.sensitiveWo
         ],
         settings.apiKey,
         settings.model,
+        settings.provider,
       );
 
       setOptimizedContent(res);
@@ -224,7 +236,7 @@ ${result.sensitiveWords?.length > 0 ? `需替换敏感词：${result.sensitiveWo
                 <div className="glass-card p-5">
                   <h3 className="text-sm font-medium flex items-center gap-2 mb-3"><AlertTriangle size={14} className="text-amber-400" /> 敏感词检查</h3>
                   <div className="space-y-2">
-                    {result.sensitiveWords.map((sw: any, i: number) => (
+                    {result.sensitiveWords.map((sw: { word: string; level: string; suggestion: string }, i: number) => (
                       <div key={i} className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
                         <div className="flex items-center gap-2"><AlertTriangle size={12} className="text-amber-400" /><span className="text-sm font-medium">{sw.word}</span></div>
                         <p className="text-xs text-[var(--color-text-secondary)] mt-1">建议：{sw.suggestion}</p>

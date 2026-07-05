@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Clock, Copy, Trash2, FileText, BookOpen, X, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useSavedContent, SavedItem } from '../../lib/useSavedContent';
 import { useToast } from '../../components/Toast';
+import { useSEO } from '../../lib/useSEO';
 
 const typeIcons: Record<SavedItem['type'], string> = {
   '文章': '📝',
@@ -14,6 +15,7 @@ const typeIcons: Record<SavedItem['type'], string> = {
 };
 
 export default function HistoryPage() {
+  useSEO('历史记录');
   const toast = useToast();
   const { items, remove, clearAll } = useSavedContent();
   const [viewItem, setViewItem] = useState<SavedItem | null>(null);

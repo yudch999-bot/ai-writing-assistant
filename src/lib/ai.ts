@@ -7,11 +7,13 @@ const STORAGE_KEY = 'ai-writer-settings';
 interface Settings {
   apiKey: string;
   model: string;
+  provider: string;
 }
 
 const defaults: Settings = {
   apiKey: '',
   model: 'deepseek-chat',
+  provider: 'deepseek',
 };
 
 export function useSettings() {
@@ -24,13 +26,19 @@ export function useSettings() {
   return { settings, loaded, saveSettings: update };
 }
 
+interface StreamChunk {
+  choices?: { delta?: { content?: string } }[];
+}
+
 export async function callAI(
   messages: { role: string; content: string }[],
   apiKey: string,
   model = 'deepseek-chat',
+  provider = 'deepseek',
   onChunk?: (text: string) => void,
   temperature = 0.7,
   maxTokens = 4096,
+  signal?: AbortSignal,
 ): Promise<string> {
   const res = await fetch('/api/chat', {
     method: 'POST',
@@ -39,10 +47,12 @@ export async function callAI(
       model,
       messages,
       apiKey,
+      provider,
       stream: !!onChunk,
       temperature,
       maxTokens,
     }),
+    signal,
   });
 
   if (!res.ok) {
@@ -63,7 +73,7 @@ export async function callAI(
         const text = line.slice(6).trim();
         if (text === '[DONE]') continue;
         try {
-          const json = JSON.parse(text);
+          const json = JSON.parse(text) as StreamChunk;
           const delta = json.choices?.[0]?.delta?.content || '';
           full += delta;
           onChunk(full);

@@ -15,12 +15,16 @@ import {
   XCircle,
   ExternalLink,
   ChevronDown,
+  FileDown,
 } from 'lucide-react';
 import { useSettings, callAI } from '../../lib/ai';
+import { downloadMarkdown } from '../../lib/export';
 import { useToast } from '../../components/Toast';
 import Link from 'next/link';
+import { useSEO } from '../../lib/useSEO';
 
 export default function StyleClonePage() {
+  useSEO('风格复刻');
   const { settings, loaded } = useSettings();
   const toast = useToast();
   const [links, setLinks] = useState(['']);
@@ -250,6 +254,7 @@ ${authorName.trim() ? `目标作者：${authorName}` : ''}
         ],
         settings.apiKey,
         settings.model,
+        settings.provider,
       );
 
       setResult(res);
@@ -466,15 +471,23 @@ ${authorName.trim() ? `目标作者：${authorName}` : ''}
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">分析结果</h2>
             {result && (
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(result || '');
-                  toast.show('已复制');
-                }}
-                className="text-xs text-[var(--color-primary-light)] hover:underline flex items-center gap-1"
-              >
-                <Copy size={12} /> 复制结果
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(result || '');
+                    toast.show('已复制');
+                  }}
+                  className="text-xs text-[var(--color-primary-light)] hover:underline flex items-center gap-1"
+                >
+                  <Copy size={12} /> 复制结果
+                </button>
+                <button
+                  onClick={() => downloadMarkdown(result || '分析结果', 'style-analysis')}
+                  className="text-xs text-[var(--color-primary-light)] hover:underline flex items-center gap-1"
+                >
+                  <FileDown size={12} /> 下载 Markdown
+                </button>
+              </div>
             )}
           </div>
           <div className="min-h-[400px] rounded-xl bg-[var(--color-surface-2)] p-4 overflow-y-auto max-h-[500px]">
