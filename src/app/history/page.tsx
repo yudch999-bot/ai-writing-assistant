@@ -12,6 +12,8 @@ const typeIcons: Record<SavedItem['type'], string> = {
   '仿写': '✍️',
   '优化': '✨',
   '智能体': '🤖',
+  '文章点评': '⭐',
+  '优化版本': '🔄',
 };
 
 export default function HistoryPage() {

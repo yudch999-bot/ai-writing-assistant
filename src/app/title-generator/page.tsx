@@ -153,7 +153,7 @@ ${audience ? `目标人群：${audience}` : ''}
           </button>
         </div>
 
-        <div className="lg:col-span-3 glass-card p-6">
+        <div className="lg:col-span-3 subtle-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">生成的标题</h2>
             {titles.length > 0 && (

@@ -4,49 +4,77 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
 import {
-  Sparkles,
-  Flame,
-  PenLine,
-  FileText,
-  RotateCcw,
-  ShieldCheck,
-  Layout,
-  Layers,
-  Bot,
-  BookOpen,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  Menu,
-  Clock,
-  CalendarDays,
-  Bookmark,
+ Sparkles,
+ Flame,
+ PenLine,
+ FileText,
+ RotateCcw,
+ ShieldCheck,
+ Layout,
+ Layers,
+ Bot,
+ BookOpen,
+ Settings,
+ ChevronLeft,
+ ChevronRight,
+ Menu,
+ Clock,
+ CalendarDays,
+ Bookmark,
+ Star,
 } from 'lucide-react';
 import { useState } from 'react';
 
-const navItems = [
-  { href: '/', label: '首页概览', icon: Sparkles, exact: true },
-  { href: '/style-clone', label: '风格复刻', icon: PenLine },
-  { href: '/hot-topics', label: '热点追踪', icon: Flame },
-  { href: '/content-plan', label: '内容规划', icon: CalendarDays },
-  { href: '/title-generator', label: '标题生成', icon: FileText },
-  { href: '/article-generation', label: '文章生成', icon: Layers },
-  { href: '/rewriting', label: '文章仿写', icon: RotateCcw },
-  { href: '/content-detection', label: '内容检测', icon: ShieldCheck },
-  { href: '/templates', label: '文章模板', icon: Bookmark },
-  { href: '/formatting', label: '公众号排版', icon: Layout },
-  { href: '/multi-platform', label: '多平台矩阵', icon: Menu },
-  { href: '/agents', label: '智能体', icon: Bot },
-  { href: '/history', label: '历史记录', icon: Clock },
-  { href: '/knowledge-base', label: '知识库', icon: BookOpen },
-  { href: '/settings', label: '设置中心', icon: Settings },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  exact?: boolean;
+}
+
+const navGroups = [
+  {
+    label: '创作工具',
+    items: [
+      { href: '/article-generation', label: '文章生成', icon: Layers },
+      { href: '/rewriting', label: '文章仿写', icon: RotateCcw },
+      { href: '/style-clone', label: '风格复刻', icon: PenLine },
+      { href: '/multi-platform', label: '多平台矩阵', icon: Menu },
+    ],
+  },
+  {
+    label: '内容优化',
+    items: [
+      { href: '/title-generator', label: '标题生成', icon: FileText },
+      { href: '/article-critique', label: '文章点评', icon: Star },
+      { href: '/content-detection', label: '内容检测', icon: ShieldCheck },
+      { href: '/content-plan', label: '内容规划', icon: CalendarDays },
+      { href: '/formatting', label: '公众号排版', icon: Layout },
+    ],
+  },
+  {
+    label: '情报与管理',
+    items: [
+      { href: '/hot-topics', label: '热点追踪', icon: Flame },
+      { href: '/knowledge-base', label: '知识库', icon: BookOpen },
+      { href: '/templates', label: '文章模板', icon: Bookmark },
+    ],
+  },
+  {
+    label: '系统',
+    items: [
+      { href: '/agents', label: '智能体', icon: Bot },
+      { href: '/history', label: '历史记录', icon: Clock },
+      { href: '/settings', label: '设置中心', icon: Settings },
+    ],
+  },
 ];
 
-export function Sidebar() {
+  export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  const isActive = (item: typeof navItems[0]) => {
+  const isActive = (item: NavItem) => {
     if (item.exact) return pathname === item.href;
     return pathname.startsWith(item.href);
   };
@@ -75,7 +103,16 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
-        {navItems.map((item) => {
+        {navGroups.map((group) => (
+          <div key={group.label}>
+            {!collapsed && (
+              <div className="px-3 pt-4 pb-0.5">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-secondary)]/40 select-none">
+                  {group.label}
+                </span>
+              </div>
+            )}
+            {group.items.map((item) => {
           const active = isActive(item);
           return (
             <Link
@@ -100,7 +137,9 @@ export function Sidebar() {
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );
-        })}
+          })}
+            </div>
+          ))}
       </nav>
 
       {/* Collapse Toggle */}

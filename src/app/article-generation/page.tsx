@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense, useRef } from 'react';
-import { Layers, Sparkles, Loader2, Copy, BookOpen, AlertCircle, LoaderCircle, X, FileDown } from 'lucide-react';
+import { Layers, Sparkles, Loader2, Copy, BookOpen, AlertCircle, LoaderCircle, X, FileDown, Star } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useSettings, callAI } from '../../lib/ai';
 import { useToast } from '../../components/Toast';
@@ -220,13 +220,14 @@ ${background ? `背景素材：${background}` : ''}
           )}
         </div>
 
-        <div className="lg:col-span-3 glass-card p-6">
+        <div className="lg:col-span-3 subtle-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">文章预览</h2>
             {result && (
               <div className="flex items-center gap-2">
                 <SaveButton type="文章" title={title} content={result || ''} />
                 <button onClick={() => { navigator.clipboard.writeText(result || ''); toast.show('已复制'); }} className="text-xs text-primary-light hover:underline flex items-center gap-1"><Copy size={12} /> 复制</button>
+                <button onClick={() => { sessionStorage.setItem('critique-prefill', JSON.stringify({ title, content: result })); window.location.href = '/article-critique?prefill=1'; }} className="text-xs text-amber-400 hover:underline flex items-center gap-1"><Star size={12} /> 去点评</button>
                 <button onClick={() => downloadMarkdown(result || '', title || 'article')} className="text-xs text-[var(--color-primary-light)] hover:underline flex items-center gap-1"><FileDown size={12} /> 下载 Markdown</button>
               </div>
             )}
