@@ -5,7 +5,7 @@ import { usePersistentStorage } from './usePersistentStorage';
 
 export interface SavedItem {
   id: string;
-  type: '文章' | '标题' | '仿写' | '优化' | '智能体';
+  type: '文章' | '标题' | '仿写' | '优化' | '智能体' | '文章点评' | '优化版本';
   title: string;
   content: string;
   createdAt: string;

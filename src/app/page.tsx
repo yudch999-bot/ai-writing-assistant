@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles, Flame, PenLine, FileText, RotateCcw, ShieldCheck, Layers, Target, Zap, type LucideIcon } from 'lucide-react';
+import { Sparkles, Flame, PenLine, FileText, RotateCcw, ShieldCheck, Layers, Target, Zap, Star, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -86,12 +86,13 @@ export default function HomePage() {
     { href: '/article-generation', label: '文章生成', desc: 'AI 生成完整公众号文章', icon: Layers, gradient: 'from-emerald-500/20 to-teal-500/20', iconColor: 'text-emerald-400' },
     { href: '/rewriting', label: '文章仿写', desc: '100% 原创深度改写', icon: RotateCcw, gradient: 'from-sky-500/20 to-blue-500/20', iconColor: 'text-sky-400' },
     { href: '/content-detection', label: '内容检测', desc: '敏感词、AI 痕迹、原创度检测', icon: ShieldCheck, gradient: 'from-violet-500/20 to-purple-500/20', iconColor: 'text-violet-400' },
+    { href: '/article-critique', label: '文章点评', desc: 'AI 主编多维度评分与优化建议', icon: Star, gradient: 'from-fuchsia-500/20 to-pink-500/20', iconColor: 'text-fuchsia-400' },
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="space-y-5 animate-fade-in-up">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl p-6 md:p-8 border border-[var(--color-primary)]/15"
+      <div className="relative overflow-hidden rounded-2xl p-4 md:p-5 border border-[var(--color-primary)]/15"
         style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 50%, transparent 100%)' }}
       >
         <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-20"
@@ -99,9 +100,9 @@ export default function HomePage() {
         <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full opacity-10"
           style={{ background: 'radial-gradient(circle, #a78bfa 0%, transparent 70%)' }} />
         <div className="relative">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">欢迎回来 👋</h1>
-          <p className="text-[var(--color-text-secondary)] max-w-xl leading-relaxed">AI 赋能公众号创作，一键复刻爆款风格，追踪全网热点，生成去 AI 味的原创文章</p>
-          <div className="flex flex-wrap gap-3 mt-5">
+          <h1 className="text-xl md:text-2xl font-bold mb-1">欢迎回来</h1>
+          <p className="text-[var(--color-text-secondary)] max-w-xl leading-relaxed text-sm">AI 赋能公众号创作，一键复刻爆款风格，追踪全网热点，生成去 AI 味的原创文章</p>
+          <div className="flex flex-wrap gap-2 mt-4">
             <Link href="/article-generation" className="btn-primary"><Zap size={16} /> 开始创作</Link>
             <Link href="/style-clone" className="btn-secondary"><PenLine size={16} /> 风格复刻</Link>
           </div>
@@ -111,14 +112,14 @@ export default function HomePage() {
       {/* Stats - dynamically calculated */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="glass-card p-4 glass-card-hover">
+          <div key={stat.label} className="glass-card p-3 glass-card-hover">
             <div className="flex items-center justify-between mb-2">
               <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
                 <stat.icon size={16} className="text-white" />
               </div>
               <span className="text-xs font-medium text-[var(--color-success)]">{stat.change}</span>
             </div>
-            <div className="text-2xl font-bold">{stat.value}</div>
+            <div className="text-xl font-bold">{stat.value}</div>
             <div className="text-xs text-[var(--color-text-secondary)] mt-1">{stat.label}</div>
           </div>
         ))}
@@ -126,10 +127,10 @@ export default function HomePage() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-lg font-semibold mb-3">快捷入口</h2>
+        <h2 className="text-base font-semibold mb-2">快捷入口</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {quickActions.map((action) => (
-            <Link key={action.href} href={action.href} className="glass-card p-4 glass-card-hover flex flex-col items-center text-center gap-2">
+            <Link key={action.href} href={action.href} className="glass-card p-3 glass-card-hover flex flex-col items-center text-center gap-1.5">
               <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.gradient} flex items-center justify-center`}>
                 <action.icon size={18} className={action.iconColor} />
               </div>
